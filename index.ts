@@ -4,7 +4,7 @@ import cors from "cors";
 import chalk from "chalk"; 
 import dotenv from "dotenv";
 import router from "./routers/index.js";
-import handleError from "./middlewares/errorHandlerMiddlware.js";
+import handleError from "./middlewares/errorHandlerMiddleware.js";
 
 dotenv.config();
 const app = express();
