@@ -3,6 +3,9 @@ import * as cardRepository from "../repositories/cardRepository.js"
 import { TransactionTypes } from "../repositories/cardRepository.js"
 import { faker } from '@faker-js/faker';
 import dayjs from "dayjs";
+import Cryptr from "cryptr";
+
+const cryptr = new Cryptr("secret");
 
 export async function createCard(employeeId: number, type: TransactionTypes) {
     await checkExistingEmployee(employeeId);
@@ -28,6 +31,7 @@ async function generateDataCard ( employeeId: number, type: TransactionTypes) {
    const cardNumber = generateCardNumber();
    const cardName = await generateHolderName(employeeId);
    const expirationCard = dayjs(Date.now()).add(5, "year").format("MM-YY");
+   const cvc = createEncriptedCVC();   
 }
 
 function generateCardNumber() {
@@ -47,4 +51,9 @@ async function generateHolderName(employeeId: number) {
 
     const convertedName = [name[0], middle, name[name.length - 1]];
     return convertedName.join(" ").toUpperCase();
+}
+
+function createEncriptedCVC(){
+    const cvc = faker.finance.creditCardCVV();
+    return cryptr.encrypt(cvc);
 }
