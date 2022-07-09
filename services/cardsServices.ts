@@ -2,7 +2,7 @@ import * as employeeRepository from "../repositories/employeeRepository.js"
 import * as cardRepository from "../repositories/cardRepository.js"
 import { TransactionTypes } from "../repositories/cardRepository.js"
 import { faker } from '@faker-js/faker';
-import { NotificationResponseMessage } from "pg-protocol/dist/messages.js";
+import dayjs from "dayjs";
 
 export async function createCard(employeeId: number, type: TransactionTypes) {
     await checkExistingEmployee(employeeId);
@@ -27,6 +27,7 @@ async function checkExistingCardType(employeeId: number, type: TransactionTypes)
 async function generateDataCard ( employeeId: number, type: TransactionTypes) {
    const cardNumber = generateCardNumber();
    const cardName = await generateHolderName(employeeId);
+   const expirationCard = dayjs(Date.now()).add(5, "year").format("MM-YY");
 }
 
 function generateCardNumber() {
