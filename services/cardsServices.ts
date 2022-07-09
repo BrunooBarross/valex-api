@@ -5,6 +5,7 @@ import { faker } from '@faker-js/faker';
 import dayjs from "dayjs";
 import Cryptr from "cryptr";
 import dotenv from "dotenv";
+import bcrypt from "bcrypt";
 
 dotenv.config();
 const cryptr = new Cryptr(process.env.CRYPTR_KEY);
@@ -42,7 +43,7 @@ async function generateCardData ( employeeId: number, type: TransactionTypes) {
         securityCode: cvc,
         expirationDate,
         password: null,
-        isVirtual: true,
+        isVirtual: false,
         originalCardId: null,
         isBlocked: true,
         type
@@ -72,4 +73,32 @@ async function generateHolderName(employeeId: number) {
 function createEncriptedCVC(){
     const cvc = faker.finance.creditCardCVV();
     return cryptr.encrypt(cvc);
+}
+
+export async function activateCard(cardId: number, securityCode: string, password: string) {
+    const card = await cardRepository.findById(cardId);
+    if (!card) {
+        throw { type: "unauthorized", message: "no-existent card" }
+    }
+    if(card.password){
+        throw { type: "bad_Request", message: "card is already activated" }
+    }
+    await checkExpirationCard(card.expirationDate);
+    await checkIsValidCVC(securityCode, card.securityCode);
+    const encryptPassword = bcrypt.hashSync(password, 10);
+    await cardRepository.update(cardId, { password: encryptPassword });
+}
+
+async function checkExpirationCard(expirationDate: string){
+    const isExpired = dayjs(expirationDate).isBefore(dayjs(Date.now()).format("MM-YY"));
+    if(isExpired){
+        throw { type: "forbidden", message: "expired card" }
+    }
+}
+
+async function checkIsValidCVC(securityCode : string, encryptSecurityCode: string){
+    const decryptCVC = cryptr.decrypt(encryptSecurityCode);
+    if( decryptCVC != securityCode){
+        throw { type: "unauthorized", message: "cvc incorrect" }
+    }
 }

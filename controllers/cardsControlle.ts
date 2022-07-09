@@ -6,3 +6,9 @@ export async function createCard(req: Request, res: Response) {
     const create = await cardsServices.createCard(employeeId, type);
     res.sendStatus(201);
 }
+
+export async function activateCard(req: Request, res: Response){
+    const { cardId, securityCode, password } = req.body;
+    await cardsServices.activateCard(cardId, securityCode, password);
+    res.sendStatus(200);
+}
