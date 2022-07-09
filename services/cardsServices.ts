@@ -10,7 +10,8 @@ const cryptr = new Cryptr("secret");
 export async function createCard(employeeId: number, type: TransactionTypes) {
     await checkExistingEmployee(employeeId);
     await checkExistingCardType(employeeId, type);
-    await generateDataCard(employeeId, type);
+    const cardData = await generateCardData(employeeId, type);
+    await cardRepository.insert(cardData);
 }
 
 async function checkExistingEmployee(employeeId: number) {
@@ -27,11 +28,24 @@ async function checkExistingCardType(employeeId: number, type: TransactionTypes)
     }
 }
 
-async function generateDataCard ( employeeId: number, type: TransactionTypes) {
-   const cardNumber = generateCardNumber();
-   const cardName = await generateHolderName(employeeId);
-   const expirationCard = dayjs(Date.now()).add(5, "year").format("MM-YY");
-   const cvc = createEncriptedCVC();   
+async function generateCardData ( employeeId: number, type: TransactionTypes) {
+    const cardNumber = generateCardNumber();
+    const cardName = await generateHolderName(employeeId);
+    const expirationDate = dayjs(Date.now()).add(5, "year").format("MM-YY");
+    const cvc = createEncriptedCVC();  
+    const cardData = {
+        employeeId,
+        number: cardNumber,
+        cardholderName:cardName,
+        securityCode: cvc,
+        expirationDate,
+        password: null,
+        isVirtual: true,
+        originalCardId: null,
+        isBlocked: true,
+        type
+    } 
+    return cardData;
 }
 
 function generateCardNumber() {
