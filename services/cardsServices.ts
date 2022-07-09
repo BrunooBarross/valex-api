@@ -1,11 +1,14 @@
 import * as employeeRepository from "../repositories/employeeRepository.js"
 import * as cardRepository from "../repositories/cardRepository.js"
+import * as paymentRepository from "../repositories/paymentRepository.js"
+import * as rechargeRepository from "../repositories/rechargeRepository.js"
 import { TransactionTypes } from "../repositories/cardRepository.js"
 import { faker } from '@faker-js/faker';
 import dayjs from "dayjs";
 import Cryptr from "cryptr";
 import dotenv from "dotenv";
 import bcrypt from "bcrypt";
+import { balancesAndTransactions } from "../controllers/cardsControlle.js"
 
 dotenv.config();
 const cryptr = new Cryptr(process.env.CRYPTR_KEY);
@@ -76,10 +79,7 @@ function createEncriptedCVC(){
 }
 
 export async function activateCard(cardId: number, securityCode: string, password: string) {
-    const card = await cardRepository.findById(cardId);
-    if (!card) {
-        throw { type: "unauthorized", message: "no-existent card" }
-    }
+    const card = await checkExistingCard(cardId);
     if(card.password){
         throw { type: "bad_Request", message: "card is already activated" }
     }
@@ -101,4 +101,37 @@ async function checkIsValidCVC(securityCode : string, encryptSecurityCode: strin
     if( decryptCVC != securityCode){
         throw { type: "unauthorized", message: "cvc incorrect" }
     }
+}
+
+export async function getTransactionsCard(cardId: number ){
+    await checkExistingCard(cardId);
+    const transactions = await paymentRepository.findByCardId(cardId);
+    const recharges = await rechargeRepository.findByCardId(cardId);
+    const balance = await generateBalance(transactions, recharges);
+
+    return { balance, transactions, recharges};
+}
+
+async function checkExistingCard(cardId: number) {
+    const card = await cardRepository.findById(cardId);
+    if (!card) {
+        throw { type: "not_Found", message: "no-existent card" }
+    }
+    return card;
+}
+
+async function generateBalance(transactions: any, recharges: any){
+    let paymentsTotal = 0;
+    let rechargeTotal= 0;
+    
+    transactions.forEach(item => {
+        paymentsTotal += item.transactions.amount;
+    });
+
+    recharges.forEach(item => {
+        rechargeTotal += item.recharges.amount;
+    });
+
+    const result = rechargeTotal - paymentsTotal;
+    return result;
 }
