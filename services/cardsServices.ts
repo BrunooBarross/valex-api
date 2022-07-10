@@ -8,7 +8,6 @@ import dayjs from "dayjs";
 import Cryptr from "cryptr";
 import dotenv from "dotenv";
 import bcrypt from "bcrypt";
-import { balancesAndTransactions } from "../controllers/cardsControlle.js"
 
 dotenv.config();
 const cryptr = new Cryptr(process.env.CRYPTR_KEY);
@@ -86,7 +85,7 @@ export async function activateCard(cardId: number, securityCode: string, passwor
     await checkExpirationCard(card.expirationDate);
     await checkIsValidCVC(securityCode, card.securityCode);
     const encryptPassword = bcrypt.hashSync(password, 10);
-    await cardRepository.update(cardId, { password: encryptPassword });
+    await cardRepository.update(cardId, { password: encryptPassword, isBlocked:false});
 }
 
 async function checkExpirationCard(expirationDate: string){
@@ -134,4 +133,21 @@ async function generateBalance(transactions: any, recharges: any){
 
     const result = rechargeTotal - paymentsTotal;
     return result;
+}
+
+export async function blockCard(cardId: number, password: string){
+    const card = await checkExistingCard(cardId);
+    if (card.isBlocked) {
+        throw { type: "unauthorized", message: "card already blocked" }
+    }
+    await checkExpirationCard(card.expirationDate);
+    await validateCardPassword(password, card.password);
+    await cardRepository.update(cardId, { isBlocked: true});
+}
+
+async function validateCardPassword(password: string, encryptedPassword: string){
+    const isValidPassword = bcrypt.compareSync(password, encryptedPassword);
+    if (!isValidPassword) {
+        throw { type: "unauthorized", message: "password incorrect" }
+    }
 }

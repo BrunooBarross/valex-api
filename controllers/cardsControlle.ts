@@ -18,3 +18,10 @@ export async function balancesAndTransactions(req: Request, res: Response) {
     const transactions = await cardsServices.getTransactionsCard(cardId);
     return res.status(200).send(transactions);
 }
+
+export async function blockCard(req: Request, res: Response){
+    const cardId = parseInt(req.params.id);
+    const { password } = req.body;
+    await cardsServices.blockCard(cardId, password);
+    res.sendStatus(200);
+}
