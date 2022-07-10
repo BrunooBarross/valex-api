@@ -3,7 +3,7 @@ import * as cardsServices from "../services/cardsServices.js"
 
 export async function createCard(req: Request, res: Response) {
     const { employeeId, type } = req.body;
-    const create = await cardsServices.createCard(employeeId, type);
+    await cardsServices.createCard(employeeId, type);
     res.sendStatus(201);
 }
 
@@ -23,5 +23,12 @@ export async function blockCard(req: Request, res: Response){
     const cardId = parseInt(req.params.id);
     const { password } = req.body;
     await cardsServices.blockCard(cardId, password);
+    res.sendStatus(200);
+}
+
+export async function unlockCard(req: Request, res: Response){
+    const cardId = parseInt(req.params.id);
+    const { password } = req.body;
+    await cardsServices.unlockCard(cardId, password);
     res.sendStatus(200);
 }

@@ -145,6 +145,16 @@ export async function blockCard(cardId: number, password: string){
     await cardRepository.update(cardId, { isBlocked: true});
 }
 
+export async function unlockCard(cardId: number, password: string){
+    const card = await checkExistingCard(cardId);
+    if (!card.isBlocked) {
+        throw { type: "unauthorized", message: "card already unlocked" }
+    }
+    await checkExpirationCard(card.expirationDate);
+    await validateCardPassword(password, card.password);
+    await cardRepository.update(cardId, { isBlocked: false});
+}
+
 async function validateCardPassword(password: string, encryptedPassword: string){
     const isValidPassword = bcrypt.compareSync(password, encryptedPassword);
     if (!isValidPassword) {
