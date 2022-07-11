@@ -100,25 +100,9 @@ export async function getTransactionsCard(cardId: number ){
     await cardUtils.checkExistingCard(cardId);
     const transactions = await paymentRepository.findByCardId(cardId);
     const recharges = await rechargeRepository.findByCardId(cardId);
-    const balance = await generateBalance(transactions, recharges);
+    const balance = await cardUtils.generateBalance(transactions, recharges);
 
     return { balance, transactions, recharges};
-}
-
-async function generateBalance(transactions: any, recharges: any){
-    let paymentsTotal = 0;
-    let rechargeTotal= 0;
-    
-    transactions.forEach(item => {
-        paymentsTotal += item.amount;
-    });
-
-    recharges.forEach(item => {
-        rechargeTotal += item.amount;
-    });
-
-    const result = rechargeTotal - paymentsTotal;
-    return result;
 }
 
 export async function blockCard(cardId: number, password: string){
@@ -127,7 +111,7 @@ export async function blockCard(cardId: number, password: string){
         throw { type: "unauthorized", message: "card already blocked" }
     }
     await cardUtils.checkExpirationCard(card.expirationDate);
-    await validateCardPassword(password, card.password);
+    await cardUtils.validateCardPassword(password, card.password);
     await cardRepository.update(cardId, { isBlocked: true});
 }
 
@@ -137,13 +121,6 @@ export async function unlockCard(cardId: number, password: string){
         throw { type: "unauthorized", message: "card already unlocked" }
     }
     await cardUtils.checkExpirationCard(card.expirationDate);
-    await validateCardPassword(password, card.password);
+    await cardUtils.validateCardPassword(password, card.password);
     await cardRepository.update(cardId, { isBlocked: false});
-}
-
-async function validateCardPassword(password: string, encryptedPassword: string){
-    const isValidPassword = bcrypt.compareSync(password, encryptedPassword);
-    if (!isValidPassword) {
-        throw { type: "unauthorized", message: "password incorrect" }
-    }
 }
