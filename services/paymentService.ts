@@ -5,9 +5,7 @@ import * as rechargeRepository from "../repositories/rechargeRepository.js"
 
 export async function makePayment(cardId: number, password: string, businessId: number, amount: number){
     const card = await cardUtils.checkExistingCard(cardId);
-    if (card.isBlocked) {
-        throw { type: "unauthorized", message: "card already unlocked" }
-    }
+    await cardUtils.verifyCardIsBlocked(card.isBlocked);
     await cardUtils.checkExpirationCard(card.expirationDate);
     await cardUtils.validateCardPassword(password, card.password);
     await verifyAndValidateBusiness(businessId, card.type);

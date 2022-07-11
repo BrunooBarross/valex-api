@@ -39,3 +39,9 @@ export async function generateBalance(transactions: any, recharges: any){
     const result = rechargeTotal - paymentsTotal;
     return result;
 }
+
+export async function verifyCardIsBlocked(isBlocked: boolean){
+    if (isBlocked) {
+        throw { type: "unauthorized", message: "unauthorized the card is blocked" }
+    }
+}

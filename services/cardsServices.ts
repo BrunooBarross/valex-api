@@ -107,9 +107,7 @@ export async function getTransactionsCard(cardId: number ){
 
 export async function blockCard(cardId: number, password: string){
     const card = await cardUtils.checkExistingCard(cardId);
-    if (card.isBlocked) {
-        throw { type: "unauthorized", message: "card already blocked" }
-    }
+    await cardUtils.verifyCardIsBlocked(card.isBlocked);
     await cardUtils.checkExpirationCard(card.expirationDate);
     await cardUtils.validateCardPassword(password, card.password);
     await cardRepository.update(cardId, { isBlocked: true});
