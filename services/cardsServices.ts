@@ -1,5 +1,6 @@
 import * as employeeRepository from "../repositories/employeeRepository.js"
 import * as cardRepository from "../repositories/cardRepository.js"
+import * as cardUtils from "../utils/cardUtils.js"
 import * as paymentRepository from "../repositories/paymentRepository.js"
 import * as rechargeRepository from "../repositories/rechargeRepository.js"
 import { TransactionTypes } from "../repositories/cardRepository.js"
@@ -78,21 +79,14 @@ function createEncriptedCVC(){
 }
 
 export async function activateCard(cardId: number, securityCode: string, password: string) {
-    const card = await checkExistingCard(cardId);
+    const card = await cardUtils.checkExistingCard(cardId);
     if(card.password){
         throw { type: "bad_Request", message: "card is already activated" }
     }
-    await checkExpirationCard(card.expirationDate);
+    await cardUtils.checkExpirationCard(card.expirationDate);
     await checkIsValidCVC(securityCode, card.securityCode);
     const encryptPassword = bcrypt.hashSync(password, 10);
     await cardRepository.update(cardId, { password: encryptPassword, isBlocked:false});
-}
-
-export async function checkExpirationCard(expirationDate: string){
-    const isExpired = dayjs(expirationDate).isBefore(dayjs(Date.now()).format("MM-YY"));
-    if(isExpired){
-        throw { type: "forbidden", message: "expired card" }
-    }
 }
 
 async function checkIsValidCVC(securityCode : string, encryptSecurityCode: string){
@@ -103,20 +97,12 @@ async function checkIsValidCVC(securityCode : string, encryptSecurityCode: strin
 }
 
 export async function getTransactionsCard(cardId: number ){
-    await checkExistingCard(cardId);
+    await cardUtils.checkExistingCard(cardId);
     const transactions = await paymentRepository.findByCardId(cardId);
     const recharges = await rechargeRepository.findByCardId(cardId);
     const balance = await generateBalance(transactions, recharges);
 
     return { balance, transactions, recharges};
-}
-
-export async function checkExistingCard(cardId: number) {
-    const card = await cardRepository.findById(cardId);
-    if (!card) {
-        throw { type: "not_Found", message: "no-existent card" }
-    }
-    return card;
 }
 
 async function generateBalance(transactions: any, recharges: any){
@@ -136,21 +122,21 @@ async function generateBalance(transactions: any, recharges: any){
 }
 
 export async function blockCard(cardId: number, password: string){
-    const card = await checkExistingCard(cardId);
+    const card = await cardUtils.checkExistingCard(cardId);
     if (card.isBlocked) {
         throw { type: "unauthorized", message: "card already blocked" }
     }
-    await checkExpirationCard(card.expirationDate);
+    await cardUtils.checkExpirationCard(card.expirationDate);
     await validateCardPassword(password, card.password);
     await cardRepository.update(cardId, { isBlocked: true});
 }
 
 export async function unlockCard(cardId: number, password: string){
-    const card = await checkExistingCard(cardId);
+    const card = await cardUtils.checkExistingCard(cardId);
     if (!card.isBlocked) {
         throw { type: "unauthorized", message: "card already unlocked" }
     }
-    await checkExpirationCard(card.expirationDate);
+    await cardUtils.checkExpirationCard(card.expirationDate);
     await validateCardPassword(password, card.password);
     await cardRepository.update(cardId, { isBlocked: false});
 }
