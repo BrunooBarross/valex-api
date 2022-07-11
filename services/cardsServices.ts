@@ -16,8 +16,9 @@ const cryptr = new Cryptr(process.env.CRYPTR_KEY);
 export async function createCard(employeeId: number, type: TransactionTypes) {
     await checkExistingEmployee(employeeId);
     await checkExistingCardType(employeeId, type);
-    const cardData = await generateCardData(employeeId, type);
+    const {cardData, cvc} = await generateCardData(employeeId, type);
     await cardRepository.insert(cardData);
+    return cvc;
 }
 
 async function checkExistingEmployee(employeeId: number) {
@@ -38,12 +39,12 @@ async function generateCardData ( employeeId: number, type: TransactionTypes) {
     const cardNumber = generateCardNumber();
     const cardName = await generateHolderName(employeeId);
     const expirationDate = dayjs(Date.now()).add(5, "year").format("MM-YY");
-    const cvc = createEncriptedCVC();  
+    const {cvc, encryptCvc} = createEncriptedCVC();  
     const cardData = {
         employeeId,
         number: cardNumber,
         cardholderName:cardName,
-        securityCode: cvc,
+        securityCode: encryptCvc,
         expirationDate,
         password: null,
         isVirtual: false,
@@ -51,7 +52,7 @@ async function generateCardData ( employeeId: number, type: TransactionTypes) {
         isBlocked: true,
         type
     } 
-    return cardData;
+    return { cardData, cvc };
 }
 
 function generateCardNumber() {
@@ -75,7 +76,8 @@ async function generateHolderName(employeeId: number) {
 
 function createEncriptedCVC(){
     const cvc = faker.finance.creditCardCVV();
-    return cryptr.encrypt(cvc);
+    const encryptCvc = cryptr.encrypt(cvc)
+    return {cvc, encryptCvc};
 }
 
 export async function activateCard(cardId: number, securityCode: string, password: string) {

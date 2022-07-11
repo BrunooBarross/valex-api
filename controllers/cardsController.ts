@@ -3,8 +3,8 @@ import * as cardsServices from "../services/cardsServices.js"
 
 export async function createCard(req: Request, res: Response) {
     const { employeeId, type } = req.body;
-    await cardsServices.createCard(employeeId, type);
-    res.sendStatus(201);
+    const insertCard = await cardsServices.createCard(employeeId, type);
+    res.status(201).send({cvc: insertCard});
 }
 
 export async function activateCard(req: Request, res: Response){
